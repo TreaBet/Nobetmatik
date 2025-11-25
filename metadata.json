@@ -1,0 +1,5 @@
+{
+  "name": "Copy of LASTEST Nobetmatik Web",
+  "description": "A sophisticated shift scheduling application ported from Python/Tkinter to React. Features automatic roster generation with load balancing, leave management, and specific requests.",
+  "requestFramePermissions": []
+}
