@@ -9,7 +9,7 @@ interface Props {
 export const StatsChart: React.FC<Props> = ({ data }) => {
     return (
         <div className="h-80 w-full mt-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Workload Distribution</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">İş Yükü Dağılımı</h3>
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                     data={data}
@@ -27,13 +27,13 @@ export const StatsChart: React.FC<Props> = ({ data }) => {
                         contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                     />
                     <Legend />
-                    <Bar dataKey="assigned" name="Total Shifts" fill="#3b82f6" radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="assigned" name="Toplam Nöbet" fill="#3b82f6" radius={[4, 4, 0, 0]}>
                         {data.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.assigned > entry.target ? '#ef4444' : '#3b82f6'} />
                         ))}
                     </Bar>
-                    <Bar dataKey="weekendShifts" name="Weekend Shifts" fill="#f97316" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="target" name="Target Quota" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="weekendShifts" name="Hafta Sonu" fill="#f97316" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="target" name="Hedef Nöbet Sayısı" fill="#10b981" radius={[4, 4, 0, 0]} />
                 </BarChart>
             </ResponsiveContainer>
         </div>

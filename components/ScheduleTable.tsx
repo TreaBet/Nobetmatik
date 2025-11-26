@@ -5,22 +5,22 @@ interface Props {
     schedule: ScheduleResult[];
 }
 
-const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 
 export const ScheduleTable: React.FC<Props> = ({ schedule }) => {
     if (schedule.length === 0) return null;
 
     const maxStaff = Math.max(...schedule.map(s => s.staff.length));
-    // Create array for headers [Staff 1, Staff 2...]
-    const staffHeaders = Array.from({ length: maxStaff || 1 }, (_, i) => `Staff ${i + 1}`);
+    // Create array for headers [Nöbetçi 1, Nöbetçi 2...]
+    const staffHeaders = Array.from({ length: maxStaff || 1 }, (_, i) => `Nöbetçi ${i + 1}`);
 
     return (
         <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
             <table className="min-w-full divide-y divide-gray-200 bg-white text-sm">
                 <thead className="bg-gray-50">
                     <tr>
-                        <th className="px-4 py-2 text-left font-medium text-gray-900">Date</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-900">Day</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-900">Tarih</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-900">Gün</th>
                         {staffHeaders.map(h => (
                             <th key={h} className="px-4 py-2 text-left font-medium text-gray-900">{h}</th>
                         ))}

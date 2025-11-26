@@ -4,6 +4,8 @@ import { parseDays, parseQuotas } from './services/parser';
 import { generateSchedule } from './services/scheduler';
 import { ScheduleTable } from './components/ScheduleTable';
 import { StatsChart } from './components/StatsChart';
+import ExcelJS from 'exceljs';
+import FileSaver from 'file-saver';
 
 // Icons (SVG components)
 const CalendarIcon = () => (
@@ -50,7 +52,7 @@ export default function App() {
                 const totalNeeded = daysInMonth * perDay;
 
                 if (quotas.length === 0) {
-                    alert("Please define at least one staff member in Quotas.");
+                    alert("Lütfen 'Nöbet Sayısı' alanına en az bir kişi ekleyin.");
                     setIsGenerating(false);
                     return;
                 }
@@ -59,12 +61,12 @@ export default function App() {
                 const genResult = generateSchedule(year, month, quotas, leaves, requests, perDay);
                 
                 if (totalQuota < totalNeeded) {
-                    genResult.logs.unshift(`WARNING: Total Quota (${totalQuota}) is less than Total Needed (${totalNeeded}). Some slots will be empty.`);
+                    genResult.logs.unshift(`UYARI: Toplam Kota (${totalQuota}), Gereken Toplamdan (${totalNeeded}) az. Bazı nöbet yerleri boş kalacak.`);
                 }
 
                 setResult(genResult);
             } catch (e) {
-                alert("An error occurred during generation. Check your inputs.");
+                alert("Oluşturma sırasında bir hata oluştu. Girdilerinizi kontrol edin.");
                 console.error(e);
             } finally {
                 setIsGenerating(false);
@@ -72,31 +74,107 @@ export default function App() {
         }, 100);
     }, [selectedDate, perDay, rawQuotas, rawLeaves, rawRequests]);
 
-    const downloadCSV = () => {
+    const handleDownloadExcel = async () => {
         if (!result) return;
-        
-        const headers = ['Date', 'Day', ...Array.from({length: perDay}, (_, i) => `Staff ${i+1}`)];
-        const rows = result.schedule.map(d => {
-            const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.dayOfWeek];
-            // Fill empty slots with -
-            const staffCells = [...d.staff];
-            while(staffCells.length < perDay) staffCells.push("-");
-            return [d.date, dayName, ...staffCells];
+
+        // Create workbook and worksheet
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Nöbet Listesi');
+
+        // Define Columns
+        // Base columns
+        const columns = [
+            { header: 'Tarih', key: 'date', width: 15 },
+            { header: 'Gün', key: 'day', width: 10 },
+        ];
+        // Staff columns
+        for (let i = 0; i < perDay; i++) {
+            columns.push({ header: `Nöbetçi ${i + 1}`, key: `staff${i}`, width: 20 });
+        }
+        worksheet.columns = columns;
+
+        // Add Data Rows
+        result.schedule.forEach(day => {
+            const dayName = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'][day.dayOfWeek];
+            
+            // Build row object dynamically based on perDay count
+            const rowData: any = {
+                date: day.date,
+                day: dayName
+            };
+            
+            day.staff.forEach((staffName, index) => {
+                rowData[`staff${index}`] = staffName;
+            });
+
+            // Fill empty slots if any
+            for(let i=day.staff.length; i<perDay; i++) {
+                rowData[`staff${i}`] = "-";
+            }
+
+            const row = worksheet.addRow(rowData);
+
+            // Styling
+            const isWeekend = day.dayOfWeek === 0 || day.dayOfWeek === 6;
+
+            // Apply styles to each cell in the row
+            row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                // Border
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+
+                // Alignment
+                cell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+                // Weekend Background Color (Orange-50 equivalent: #FFF7ED -> FFFFF7ED in ARGB)
+                if (isWeekend) {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFFFF7ED' }
+                    };
+                    // Make text slightly bolder/darker orange for day name (Column 2)
+                    if (colNumber === 2) { 
+                        cell.font = { color: { argb: 'FFEA580C' }, bold: true };
+                    }
+                }
+            });
         });
 
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(r => r.join(','))
-        ].join('\n');
+        // Header Styling
+        worksheet.getRow(1).eachCell((cell) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFF3F4F6' } // Gray-100
+            };
+            cell.border = { bottom: { style: 'medium' } };
+        });
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `Schedule_${selectedDate}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Auto-width Calculation (Simple Heuristic)
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            if (column && column.eachCell) {
+                column.eachCell({ includeEmpty: true }, (cell) => {
+                    const columnLength = cell.value ? cell.value.toString().length : 10;
+                    if (columnLength > maxLength) {
+                        maxLength = columnLength;
+                    }
+                });
+            }
+            // Add a little padding
+            column.width = maxLength < 10 ? 10 : maxLength + 2;
+        });
+
+        // Write buffer
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        FileSaver.saveAs(blob, `Nobet_Listesi_${selectedDate}.xlsx`);
     };
 
     return (
@@ -110,7 +188,7 @@ export default function App() {
                         </div>
                         <h1 className="text-xl font-bold text-gray-900 tracking-tight">Nobetmatik Web</h1>
                     </div>
-                    <div className="text-sm text-gray-500">v17.0 (Ported)</div>
+                    <div className="text-sm text-gray-500">v17.0</div>
                 </div>
             </header>
 
@@ -120,7 +198,7 @@ export default function App() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex flex-wrap gap-6 mb-6 items-end">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Select Month</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Ay Seçimi</label>
                             <input 
                                 type="month" 
                                 value={selectedDate}
@@ -129,53 +207,68 @@ export default function App() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Staff Per Day</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Günlük Nöbetçi Sayısı</label>
                             <input 
                                 type="number" 
                                 min="1" 
                                 max="10"
                                 value={perDay}
                                 onChange={(e) => setPerDay(parseInt(e.target.value) || 1)}
-                                className="block w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
                             />
                         </div>
                         <div className="flex-grow"></div>
-                        <button 
+                        <button
                             onClick={handleGenerate}
                             disabled={isGenerating}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-white font-medium shadow-sm transition-all
-                                ${isGenerating ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow'}`}
+                            className={`flex items-center justify-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white transition-colors
+                                ${isGenerating ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'}
+                            `}
                         >
-                            {isGenerating ? 'Optimizing...' : 'Generate Schedule'}
+                            {isGenerating ? 'Oluşturuluyor...' : 'Listeyi Oluştur'}
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-blue-700">1. Quotas (Name: Count)</label>
-                            <textarea 
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Quotas */}
+                        <div className="flex flex-col h-full">
+                            <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                1. Nöbet Sayısı (İsim: Sayı)
+                            </label>
+                            <textarea
+                                className="flex-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm font-mono p-3 border min-h-[200px]"
                                 value={rawQuotas}
-                                onChange={e => setRawQuotas(e.target.value)}
-                                className="w-full h-48 p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                                placeholder="Ahmet: 5"
+                                onChange={(e) => setRawQuotas(e.target.value)}
+                                placeholder="Ahmet: 5..."
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-red-700">2. Leaves (Name: Day, Day...)</label>
-                            <textarea 
+
+                        {/* Leaves */}
+                        <div className="flex flex-col h-full">
+                            <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                2. Nöbet Yazılamayacak Günler (İsim: 1, 5...)
+                            </label>
+                            <textarea
+                                className="flex-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 text-sm font-mono p-3 border min-h-[200px]"
                                 value={rawLeaves}
-                                onChange={e => setRawLeaves(e.target.value)}
-                                className="w-full h-48 p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm"
-                                placeholder="Ahmet: 1, 2"
+                                onChange={(e) => setRawLeaves(e.target.value)}
+                                placeholder="Ahmet: 10, 11..."
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-green-700">3. Requests (Name: Day...)</label>
-                            <textarea 
+
+                        {/* Requests */}
+                        <div className="flex flex-col h-full">
+                            <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                3. Nöbet İstekleri (İsim: 5, 20...)
+                            </label>
+                            <textarea
+                                className="flex-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm font-mono p-3 border min-h-[200px]"
                                 value={rawRequests}
-                                onChange={e => setRawRequests(e.target.value)}
-                                className="w-full h-48 p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono text-sm"
-                                placeholder="Ahmet: 5"
+                                onChange={(e) => setRawRequests(e.target.value)}
+                                placeholder="Ayşe: 5..."
                             />
                         </div>
                     </div>
@@ -185,44 +278,46 @@ export default function App() {
                 {result && (
                     <div className="space-y-8 animate-fade-in">
                         
-                        {/* Statistics & Logs */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Chart */}
-                            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                                <StatsChart data={result.stats} />
-                            </div>
-
-                            {/* Logs */}
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col h-[400px]">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <AlertIcon /> Operation Logs
-                                </h3>
-                                <div className="flex-1 overflow-y-auto bg-gray-50 rounded border border-gray-200 p-3 font-mono text-xs text-gray-600 space-y-1">
-                                    {result.logs.length === 0 ? (
-                                        <span className="text-green-600">No warnings generated. Perfect run.</span>
-                                    ) : (
-                                        result.logs.map((log, i) => (
-                                            <div key={i} className={log.includes('Warning') || log.includes('Critical') ? 'text-amber-600' : 'text-gray-600'}>
-                                                {log}
-                                            </div>
-                                        ))
-                                    )}
+                        {/* Logs / Warnings */}
+                        {result.logs.length > 0 && (
+                            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
+                                <div className="flex">
+                                    <div className="flex-shrink-0">
+                                        <AlertIcon />
+                                    </div>
+                                    <div className="ml-3">
+                                        <h3 className="text-sm font-medium text-yellow-800">İşlem Raporu</h3>
+                                        <div className="mt-2 text-sm text-yellow-700">
+                                            <ul className="list-disc pl-5 space-y-1">
+                                                {result.logs.map((log, i) => (
+                                                    <li key={i}>{log}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex justify-end">
+                            <button
+                                onClick={handleDownloadExcel}
+                                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                                <div className="mr-2 text-green-600">
+                                    <DownloadIcon />
+                                </div>
+                                Excel Olarak İndir (.xlsx)
+                            </button>
                         </div>
 
-                        {/* Table */}
+                        {/* Schedule Table */}
+                        <ScheduleTable schedule={result.schedule} />
+
+                        {/* Stats Chart */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold text-gray-900">Generated Schedule</h2>
-                                <button 
-                                    onClick={downloadCSV}
-                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    <DownloadIcon /> Export CSV
-                                </button>
-                            </div>
-                            <ScheduleTable schedule={result.schedule} />
+                            <StatsChart data={result.stats} />
                         </div>
                     </div>
                 )}

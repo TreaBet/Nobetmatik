@@ -31,7 +31,7 @@ export interface GenerationResult {
     success: boolean;
 }
 
-export const SAMPLE_QUOTAS = `# Example: Name: Quota
+export const SAMPLE_QUOTAS = `# Örnek: İsim: Sayı
 Ahmet Yılmaz: 5
 Mehmet Demir: 5
 Ayşe Kaya: 5
@@ -39,10 +39,10 @@ Fatma Çelik: 5
 Ali Veli: 5
 Zeynep: 5`;
 
-export const SAMPLE_LEAVES = `# Example: Name: 1, 2, 15
+export const SAMPLE_LEAVES = `# Örnek: İsim: 1, 2, 15
 Ahmet Yılmaz: 10, 11
 `;
 
-export const SAMPLE_REQUESTS = `# Example: Name: 5, 20
+export const SAMPLE_REQUESTS = `# Örnek: İsim: 5, 20
 Ayşe Kaya: 5
 `;
