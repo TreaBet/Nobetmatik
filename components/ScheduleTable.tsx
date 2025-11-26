@@ -30,13 +30,13 @@ export const ScheduleTable: React.FC<Props> = ({ schedule }) => {
                     {schedule.map((day) => {
                         const isWeekend = day.dayOfWeek === 0 || day.dayOfWeek === 6;
                         
-                        // Row styling
-                        const rowClass = isWeekend ? 'bg-orange-50' : 'hover:bg-gray-50';
-                        const textClass = 'text-gray-700';
+                        // Row styling: Use a more visible orange background for weekends
+                        const rowClass = isWeekend ? 'bg-orange-100' : 'hover:bg-gray-50';
+                        const textClass = 'text-gray-900'; // Always dark text
 
                         return (
                             <tr key={day.date} className={rowClass}>
-                                <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">
+                                <td className={`px-4 py-2 font-medium whitespace-nowrap ${textClass}`}>
                                     {day.date}
                                     {day.warning && (
                                         <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
@@ -44,12 +44,12 @@ export const ScheduleTable: React.FC<Props> = ({ schedule }) => {
                                         </span>
                                     )}
                                 </td>
-                                <td className={`px-4 py-2 whitespace-nowrap ${isWeekend ? 'font-bold text-orange-600' : 'text-gray-500'}`}>
+                                <td className={`px-4 py-2 whitespace-nowrap font-medium ${textClass}`}>
                                     {dayNames[day.dayOfWeek]}
                                 </td>
                                 {Array.from({ length: Math.max(maxStaff, 1) }).map((_, idx) => (
                                     <td key={idx} className={`px-4 py-2 whitespace-nowrap ${textClass}`}>
-                                        {day.staff[idx] || <span className="text-gray-300 italic">-</span>}
+                                        {day.staff[idx] || <span className="text-gray-400 italic">-</span>}
                                     </td>
                                 ))}
                             </tr>

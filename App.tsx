@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { SAMPLE_LEAVES, SAMPLE_QUOTAS, SAMPLE_REQUESTS, GenerationResult } from './types';
 import { parseDays, parseQuotas } from './services/parser';
 import { generateSchedule } from './services/scheduler';
@@ -19,16 +19,30 @@ const AlertIcon = () => (
 );
 
 export default function App() {
-    // --- State ---
-    const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM
-    const [perDay, setPerDay] = useState<number>(1);
+    // --- State Initialization with LocalStorage ---
     
-    const [rawQuotas, setRawQuotas] = useState<string>(SAMPLE_QUOTAS);
-    const [rawLeaves, setRawLeaves] = useState<string>(SAMPLE_LEAVES);
-    const [rawRequests, setRawRequests] = useState<string>(SAMPLE_REQUESTS);
+    // Helper to get from local storage or default
+    const getStored = (key: string, def: any) => {
+        const stored = localStorage.getItem(key);
+        return stored ? stored : def;
+    };
+
+    const [selectedDate, setSelectedDate] = useState<string>(() => getStored('nobet_date', new Date().toISOString().slice(0, 7)));
+    const [perDay, setPerDay] = useState<number>(() => parseInt(getStored('nobet_perDay', '1')));
+    
+    const [rawQuotas, setRawQuotas] = useState<string>(() => getStored('nobet_quotas', SAMPLE_QUOTAS));
+    const [rawLeaves, setRawLeaves] = useState<string>(() => getStored('nobet_leaves', SAMPLE_LEAVES));
+    const [rawRequests, setRawRequests] = useState<string>(() => getStored('nobet_requests', SAMPLE_REQUESTS));
     
     const [result, setResult] = useState<GenerationResult | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // --- Persistence Effects ---
+    useEffect(() => { localStorage.setItem('nobet_date', selectedDate); }, [selectedDate]);
+    useEffect(() => { localStorage.setItem('nobet_perDay', perDay.toString()); }, [perDay]);
+    useEffect(() => { localStorage.setItem('nobet_quotas', rawQuotas); }, [rawQuotas]);
+    useEffect(() => { localStorage.setItem('nobet_leaves', rawLeaves); }, [rawLeaves]);
+    useEffect(() => { localStorage.setItem('nobet_requests', rawRequests); }, [rawRequests]);
 
     // --- Handlers ---
     
@@ -130,17 +144,16 @@ export default function App() {
                 // Alignment
                 cell.alignment = { vertical: 'middle', horizontal: 'left' };
 
-                // Weekend Background Color (Orange-50 equivalent: #FFF7ED -> FFFFF7ED in ARGB)
+                // Weekend Background Color (Orange-100 equivalent: #FFEDD5 -> FFFFEDD5 in ARGB)
+                // Using a clearer orange for background
                 if (isWeekend) {
                     cell.fill = {
                         type: 'pattern',
                         pattern: 'solid',
-                        fgColor: { argb: 'FFFFF7ED' }
+                        fgColor: { argb: 'FFFFEDD5' }
                     };
-                    // Make text slightly bolder/darker orange for day name (Column 2)
-                    if (colNumber === 2) { 
-                        cell.font = { color: { argb: 'FFEA580C' }, bold: true };
-                    }
+                    // Text color remains black (default) as requested, removing orange text override
+                    cell.font = { color: { argb: 'FF000000' } };
                 }
             });
         });
@@ -188,7 +201,7 @@ export default function App() {
                         </div>
                         <h1 className="text-xl font-bold text-gray-900 tracking-tight">Nobetmatik Web</h1>
                     </div>
-                    <div className="text-sm text-gray-500">v17.0</div>
+                    <div className="text-sm text-gray-500">v17.1</div>
                 </div>
             </header>
 
