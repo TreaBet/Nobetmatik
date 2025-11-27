@@ -1,6 +1,6 @@
 {
-  "name": "nobetmatik-web",
-  "private": true,
+  "name": "@treabet/nobetmatik-web",
+  "private": false,
   "version": "17.0.0",
   "type": "module",
   "scripts": {
@@ -28,6 +28,5 @@
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
-  },
   }
 }
