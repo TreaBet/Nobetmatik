@@ -1,5 +1,5 @@
 # Aşama 1: Build (Derleme)
-FROM node:18-alpine AS build
+FROM node:22-alpine AS build
 LABEL org.opencontainers.image.source="https://github.com/TreaBet/Nobetmatik" \
       org.opencontainers.image.title="Nobetmatik Web" \
       org.opencontainers.image.description="Nobetmatik web arayüzü, Vite + React + Tailwind ile hazırlanmış." \
