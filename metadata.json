@@ -1,5 +1,5 @@
 {
-  "name": "Copy of LASTEST Nobetmatik Web",
-  "description": "A sophisticated shift scheduling application ported from Python/Tkinter to React. Features automatic roster generation with load balancing, leave management, and specific requests.",
+  "name": "Nöbetmatik v20 Enterprise",
+  "description": "Kurumsal düzeyde, servis bazlı, kıdem ve grup öncelikli akıllı nöbet çizelgeleme ve otomasyon sistemi.",
   "requestFramePermissions": []
 }

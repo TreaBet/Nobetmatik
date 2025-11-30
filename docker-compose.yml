@@ -1,11 +1,11 @@
-services:
-  nobet_app:
-    image: ghcr.io/treabet/nobetmatik:latest
-    restart: unless-stopped
-    ports: 81:80
-    networks:
-      - proxy
+version: '3.8'
 
-networks:
-  proxy:
-    external: true
+services:
+  nobetmatik:
+    build: .
+    container_name: nobetmatik_v20
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production

@@ -1,0 +1,132 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  @apply bg-white text-slate-800 antialiased min-h-screen;
+  background-color: #ffffff !important;
+  color: #1f2937 !important; /* Force dark gray text globally */
+}
+
+#root {
+  @apply min-h-screen flex flex-col bg-white;
+}
+
+/* REPORT TABLE STYLES - STRICT CONTRAST */
+.report-table-container {
+  @apply overflow-x-auto border rounded-lg shadow-sm bg-white;
+}
+
+.report-table {
+  @apply min-w-full divide-y divide-gray-200 border-collapse bg-white;
+}
+
+.report-table thead th {
+  /* Default Header: Dark Gray Background, White Text */
+  @apply bg-slate-800 text-white px-4 py-3 text-left text-xs font-bold uppercase tracking-wider sticky top-0 z-20 border-b border-gray-300;
+}
+
+.report-table tbody td {
+  /* Default Cell: White Background, Dark Text */
+  @apply px-4 py-3 text-sm border-b border-gray-200 bg-white text-slate-900 align-top;
+}
+
+/* Sticky First Column */
+.report-table .sticky-col {
+  @apply sticky left-0 z-20 border-r border-gray-300;
+}
+
+/* Specific background for sticky cells to cover scrolling content */
+.report-table tbody .sticky-col {
+  @apply bg-white text-slate-900 font-medium;
+}
+.report-table thead .sticky-col {
+  @apply bg-slate-800 text-white z-30; /* Higher z-index for top-left corner */
+}
+
+/* Weekend Row Highlight (Subtle) */
+.report-table tr.is-weekend td {
+  @apply bg-orange-50;
+}
+.report-table tr.is-weekend .sticky-col {
+  @apply bg-orange-50;
+}
+
+/* Hover Effects */
+.report-table tbody tr:hover td {
+  background-color: #eff6ff !important; /* blue-50 */
+}
+.report-table tbody tr:hover .sticky-col {
+  background-color: #eff6ff !important;
+}
+
+/* --- BADGES --- */
+.slot-badge {
+  @apply text-xs px-2 py-1 rounded border mb-1 block w-full text-left truncate transition-all cursor-default;
+}
+.slot-badge.clickable:hover {
+  @apply ring-2 ring-blue-400 scale-[1.02] cursor-pointer;
+}
+
+.slot-empty {
+  @apply bg-red-100 border-red-300 text-red-800 font-bold;
+}
+
+.slot-normal {
+  @apply bg-blue-50 border-blue-200 text-blue-800;
+}
+
+.slot-emergency {
+  @apply bg-red-50 border-red-200 text-red-800;
+}
+
+/* --- HIGH CONTRAST (B/W) MODE --- */
+.high-contrast .report-table-container {
+  @apply border-2 border-black rounded-none shadow-none;
+}
+
+.high-contrast .report-table thead th {
+  @apply bg-black text-white border-b-2 border-black;
+}
+
+.high-contrast .report-table tbody td {
+  @apply text-black border-black border-b bg-white font-medium !important;
+}
+
+.high-contrast .report-table tr.is-weekend td,
+.high-contrast .report-table tr.is-weekend .sticky-col {
+  @apply bg-gray-100 !important;
+  background-image: linear-gradient(45deg, #000000 5%, transparent 5%, transparent 50%, #000000 50%, #000000 55%, transparent 55%, transparent);
+  background-size: 10px 10px;
+  background-color: #f3f4f6 !important;
+  opacity: 0.9;
+}
+
+/* Sticky Col B/W */
+.high-contrast .report-table tbody .sticky-col {
+  @apply bg-white border-r-2 border-black text-black !important;
+}
+.high-contrast .report-table thead .sticky-col {
+  @apply bg-black text-white border-r-2 border-white !important;
+}
+
+/* Badges B/W */
+.high-contrast .slot-badge {
+  @apply bg-white text-black border border-black rounded-none !important;
+}
+.high-contrast .slot-empty {
+  @apply border-2 border-dashed border-black bg-transparent !important;
+}
+.high-contrast .slot-emergency {
+  @apply border-black font-bold underline !important;
+}
+
+/* Hover B/W */
+.high-contrast .report-table tbody tr:hover td {
+  @apply bg-gray-200 !important;
+}
